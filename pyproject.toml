@@ -1,0 +1,38 @@
+[project]
+name = "a4ai-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "herreramaxi", email = "herreramaxi@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "discoveryworld",
+    "dotenv>=0.9.9",
+    "langchain>=1.4.9",
+    "langchain-openai>=1.7.2",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
+    "openai>=3.50.0",
+    "pathfinding>=1.0.23",
+    "psutil>=7.2.2",
+    "pygame>=2.6.1",
+    "termcolor>=3.3.0",
+    "tiktoken>=0.14.0",
+]
+
+[tool.uv.sources]
+discoveryworld = { path = "environment/discoveryworld", editable = true }
+
+[project.scripts]
+a4ai-project = "a4ai_project:main"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+]
