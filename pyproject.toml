@@ -26,9 +26,6 @@ dependencies = [
 [tool.uv.sources]
 discoveryworld = { path = "environment/discoveryworld", editable = true }
 
-[project.scripts]
-a4ai-project = "a4ai_project:main"
-
 [build-system]
 requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
