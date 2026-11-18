@@ -2,21 +2,10 @@ from dataclasses import dataclass
 import json
 import time
 
+from agents.AgentsFactory import AgentType, AgentsFactory
 from agents.base import BaseAgent, StepView
-from agents.RandomAgent import RandomAgent
-from agents.SingleLLMAgent import SingleLLMAgent
 from environment.discoveryworld.discoveryworld.DiscoveryWorldAPI import DiscoveryWorldAPI
 from shared_world import randomize_start_positions, save_shared_frame
-
-AGENT_NAMES = {
-    "randomagent": "RandomAgent",
-    "singlellmagent": "SingleLLMAgent",
-}
-
-
-def canonical_agent_name(name: str) -> str | None:
-    return AGENT_NAMES.get(name.lower())
-
 
 def reveal_open_dialog(api, agent_idx: int) -> None:
     """Show an open conversation in the observation.
@@ -41,10 +30,9 @@ def reveal_open_dialog(api, agent_idx: int) -> None:
 @dataclass
 class AgentRunner:
 
-    def runAgent(self, agent: str, scenarioName: str, difficultyStr: str, seed: int = 0, numSteps: int = 10, exportVideo: bool = False, threadId: int = 1, debug: bool = False, numUserAgents: int = 1, spawnSeed: int | None = None):
-        print("Running agent '" + agent + "' on scenario '" + scenarioName + "' with difficulty '" + difficultyStr + "' for " + str(numSteps) + " steps, seed " + str(seed) + ", thread ID " + str(threadId) + ", agents " + str(numUserAgents) + ".")
-        startTime = time.time()
-
+    def runAgent(self, agent: AgentType, scenarioName: str, difficultyStr: str, seed: int = 0, numSteps: int = 10, exportVideo: bool = False, threadId: int = 1, debug: bool = False, numUserAgents: int = 1, spawnSeed: int | None = None):
+        print("Running agent '" + agent.value + "' on scenario '" + scenarioName + "' with difficulty '" + difficultyStr + "' for " + str(numSteps) + " steps, seed " + str(seed) + ", thread ID " + str(threadId) + ", agents " + str(numUserAgents) + ".")
+       
         api = DiscoveryWorldAPI(threadID=threadId)
         success = api.loadScenario(scenarioName=scenarioName, difficultyStr=difficultyStr, randomSeed=seed, numUserAgents=numUserAgents)
         if success == False:
@@ -56,10 +44,6 @@ class AgentRunner:
 
         logFileSuffix = "." + scenarioName + "-" + difficultyStr + "-s" + str(seed) + "-thread" + str(api.THREAD_ID)
         agents = self._create_agents(agent, seed, api.numUserAgents)
-        if agents is None:
-            print("Error: Unknown agent '" + agent + "'.")
-            print("Available agents: " + ", ".join(AGENT_NAMES.values()))
-            return None
 
         if spawnSeed is not None:
             randomize_start_positions(api, spawnSeed)
@@ -67,19 +51,23 @@ class AgentRunner:
         if save_frames:
             save_shared_frame(api)
 
-        self._run_episode(api, agents, numSteps=numSteps, debug=debug, save_frames=save_frames)
+        startTime = time.time()
+        episode = self._run_episode(api, agents, numSteps=numSteps, debug=debug, save_frames=save_frames)
         deltaTime = time.time() - startTime
         print("Elapsed time: " + str(deltaTime) + " seconds for " + str(numSteps) + " steps.")
         stepsPerSecond = numSteps / deltaTime if deltaTime else 0
-
+        
         finalScorecard = api.getTaskScorecard()
         print("Final scorecard: ")
         print(json.dumps(finalScorecard, indent=4, sort_keys=True))
 
         taskName = finalScorecard[0]["taskName"]
         finalNormalizedScore = finalScorecard[0]["scoreNormalized"]
+        totalScore = finalScorecard[0]["score"]
+        stepsTaken = api.getStepCounter()
+
         print("Final normalized score for task '" + taskName + "': " + str(finalNormalizedScore))
-        print("Number of steps: " + str(api.getStepCounter()))
+        print("Number of steps: " + str(stepsTaken))
         print("Steps per second: " + str(stepsPerSecond))
 
         if exportVideo == True:
@@ -94,27 +82,38 @@ class AgentRunner:
             completedSuccessfully = 1
 
         return {
-            "agentName": canonical_agent_name(agent) or agent,
+            "agentName": agent.value,
+            "scenario": scenarioName,
+            "difficulty": difficultyStr,   
+            "numStepsLimit": numSteps,         
+            "numUserAgents": numUserAgents,               
+            "totalScore":totalScore,
             "finalNormalizedScore": finalNormalizedScore,
             "completed": completed,
-            "completedSuccessfully": completedSuccessfully,
+            "completedSuccessfully": completedSuccessfully,   
+            "stepsTaken": stepsTaken,
+            "actionsTaken": episode["actionsTaken"],
+            "actionsSucceeded": episode["actionsSucceeded"],
+            "choosingActionTime": episode["choosingActionTime"],
+            "totalTimeTaken": deltaTime,
             "stepsPerSecond": stepsPerSecond,
         }
 
-    def _create_agents(self, agent_name: str, seed: int, num_agents: int) -> list[BaseAgent] | None:
-        canonical = canonical_agent_name(agent_name)
-        if canonical is None:
-            return None
-        agents = []
-        for agent_idx in range(num_agents):
-            if canonical == "RandomAgent":
-                agents.append(RandomAgent(agent_idx=agent_idx, seed=seed + agent_idx))
-            elif canonical == "SingleLLMAgent":
-                agents.append(SingleLLMAgent(agent_idx=agent_idx))
-        return agents
+    def _create_agents(self, agent_type: AgentType, seed: int, num_agents: int) -> list[BaseAgent]:
+        return [
+            AgentsFactory.create_agent(
+                agent_type,
+                agent_idx=agent_idx,
+                seed=seed + agent_idx,
+            )
+            for agent_idx in range(num_agents)
+        ]
 
-    def _run_episode(self, api: DiscoveryWorldAPI, agents: list[BaseAgent], numSteps: int, debug: bool, save_frames: bool) -> None:
+    def _run_episode(self, api: DiscoveryWorldAPI, agents: list[BaseAgent], numSteps: int, debug: bool, save_frames: bool) -> dict:
         histories = {agent.agent_idx: [] for agent in agents}
+        actions_taken = 0
+        actions_succeeded = 0
+        choosing_action_time = 0.0
         for step in range(numSteps):
             if api.areTasksComplete():
                 break
@@ -146,8 +145,13 @@ class AgentRunner:
                     teleport_locations=api.listTeleportLocationsDict(),
                     history=history,
                 )
+                choose_started = time.time()
                 action = agent.choose_action(view)
+                choosing_action_time += time.time() - choose_started
                 result = api.performAgentAction(agentIdx=agent.agent_idx, actionJSON=action.copy())
+                actions_taken += 1
+                if isinstance(result, dict) and result.get("success") is True:
+                    actions_succeeded += 1
                 observation = api.getAgentObservation(agentIdx=agent.agent_idx)
                 if observation.get("errors"):
                     raise RuntimeError(observation["errors"])
@@ -169,3 +173,8 @@ class AgentRunner:
                 raise RuntimeError(tick_result)
             if save_frames:
                 save_shared_frame(api)
+        return {
+            "actionsTaken": actions_taken,
+            "actionsSucceeded": actions_succeeded,
+            "choosingActionTime": choosing_action_time,
+        }

@@ -6,7 +6,8 @@ import json
 import random 
 import time
 
-from agent_runner import AGENT_NAMES, AgentRunner, canonical_agent_name
+from agents.AgentsFactory import AgentConfiguration, AgentType
+from agent_runner import AgentRunner
 from environment.discoveryworld.discoveryworld.ScenarioMaker import SCENARIO_DIFFICULTY_OPTIONS, SCENARIO_NAMES, getInternalScenarioName
 
 
@@ -21,7 +22,11 @@ def main():
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Play DiscoveryWorld using Random Baseline Agent.")
-    parser.add_argument('--agent', type=str, default="RandomAgent", help='Agent to use: RandomAgent or SingleLLMAgent (default: RandomAgent)')
+    parser.add_argument(
+        '--agent',
+        choices=[agent_type.value for agent_type in AgentType],
+        default=AgentType.Random.value,
+    )
     parser.add_argument('--scenario', choices=SCENARIO_NAMES, default=None)
     parser.add_argument('--difficulty', choices=list(SCENARIO_DIFFICULTY_OPTIONS.values()), default=None)
     parser.add_argument('--seed', type=int, default=0)
@@ -33,12 +38,8 @@ def main():
     parser.add_argument('--threadId', type=int, default=randomThreadId)
 
     args = parser.parse_args()
-    agent = canonical_agent_name(args.agent)
-    if agent is None:
-        print("Error: Unknown agent '" + args.agent + "'.")
-        print("Available agents: " + ", ".join(AGENT_NAMES.values()))
-        raise SystemExit(1)
-    print("Using Agent: " + agent)
+    agent_config = AgentConfiguration(agent_type=AgentType(args.agent))
+    print("Using Agent: " + agent_config.agent_type.value)
     print("Using Thread ID: " + str(args.threadId))
     print("This can be specified with the '--threadId' argument.")
     time.sleep(1)
@@ -65,16 +66,13 @@ def main():
         raise SystemExit(1)
 
     threadId = args.threadId
-    finalScores = AgentRunner().runAgent(agent=agent, scenarioName=args.scenario, difficultyStr=args.difficulty, seed=args.seed, numSteps=args.numSteps, exportVideo=args.video, threadId=threadId, debug=False, numUserAgents=args.numAgents, spawnSeed=args.spawnSeed)
+    finalScores = AgentRunner().runAgent(agent=agent_config.agent_type, scenarioName=args.scenario, difficultyStr=args.difficulty, seed=args.seed, numSteps=args.numSteps, exportVideo=args.video, threadId=threadId, debug=False, numUserAgents=args.numAgents, spawnSeed=args.spawnSeed)
     if (finalScores == None):
         print("Run failed for '" + args.scenario + "' / '" + args.difficulty + "'.")
         raise SystemExit(1)
 
-    finalScores["scenario"] = args.scenario
-    finalScores["difficulty"] = args.difficulty
-    finalScores["numSteps"] = args.numSteps
-    finalScores["seed"] = args.seed
-    finalScores["threadId"] = threadId
+    # finalScores["seed"] = args.seed
+    # finalScores["threadId"] = threadId
 
     print("Final scores: ")
     print(json.dumps(finalScores, indent=4, sort_keys=True))

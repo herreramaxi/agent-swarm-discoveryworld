@@ -16,6 +16,6 @@ playback or `--output video/both-agents.mp4` to choose another destination.
 --scenario "Space Sick" --difficulty Challenge --seed 0 --numSteps 300 --threadId 837421
 
 
- uv run python .\__init__.py --scenario "Combinatorial Chemistry" --difficulty Easy --seed 0 --numSteps 40 --agent SingleLLMAgent
+uv run python .\__init__.py --scenario "Combinatorial Chemistry" --difficulty Easy --seed 0 --numSteps 40 --agent LLMAgent
 
-  uv run python .\__init__.py --scenario "Reactor Lab" --difficulty Easy --seed 0 --numSteps 20 --agent SingleLLMAgent -numAgents 2 
+  uv run python .\__init__.py --scenario "Reactor Lab" --difficulty Easy --seed 0 --numSteps 20 --agent LLMAgent -numAgents 2

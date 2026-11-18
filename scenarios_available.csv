@@ -1,0 +1,36 @@
+Scenario,Difficulty,Agents,Observation
+Reactor Lab,Easy,1-3,"Scientific experiment. Measure the crystal with the microscope, infer the resonance frequency, and install it in the reactor."
+Reactor Lab,Normal,1-3,"Scientific experiment. Measure the crystal with the microscope, infer the resonance frequency, and install it in the reactor."
+Reactor Lab,Challenge,1-3,"Scientific experiment. Measure the crystal with the microscope, infer the resonance frequency, and install it in the reactor."
+Archaeology Dating,Easy,1,"Scientific measurement. Date artifacts with the radiocarbon meter and decide which dig site is oldest. The easy map is a shortened version."
+Archaeology Dating,Normal,1-5,"Scientific experiment. Explore several dig sites, measure artifacts, and infer the oldest site."
+Archaeology Dating,Challenge,1-5,"Scientific experiment. Explore several dig sites, measure artifacts, and infer the oldest site. Challenge uses a generic radioisotope meter, so the reading needs more interpretation."
+Combinatorial Chemistry,Easy,1,"Scientific experiment. Dispense chemicals, mix them, and use the rusted key as the test of which combination works."
+Combinatorial Chemistry,Normal,1,"Scientific experiment. Dispense chemicals, mix them, and use the rusted key as the test of which combination works."
+Combinatorial Chemistry,Challenge,1,"Scientific experiment. Dispense chemicals, mix them, and use the rusted key as the test of which combination works."
+Plant Nutrients,Easy,1,"Scientific experiment, shortened. Measure soil nutrients and find which seed grows."
+Plant Nutrients,Normal,1-5,"Scientific experiment. Measure plots, plant seeds, and infer the nutrient rule."
+Plant Nutrients,Challenge,1-5,"Scientific experiment. Measure plots, plant seeds, and infer the nutrient rule. Challenge hides that rule behind a logical condition."
+Space Sick,Easy,1,"Shortened instrument task. Five meters are present and the goal is to identify the critical one."
+Space Sick,Normal,1-5,"Scientific experiment. Investigate which mushrooms make people ill. Uses the microscope and spectrometer."
+Space Sick,Challenge,1-5,"Scientific experiment. Investigate which mushrooms make people ill. Uses the glowing rock as the detector, and color is only a hint."
+Proteomics,Easy,1,"Scientific data analysis, shortened. Compare instrument readings and find the animal whose values are outliers."
+Proteomics,Normal,1-5,"Scientific experiment. Collect proteomics measurements, cluster them, and state which animal does not belong with the others."
+Proteomics,Challenge,1-5,"Scientific experiment. Collect proteomics measurements, cluster them, and state which animal does not belong with the others."
+It's (not) Rocket Science!,Easy,1-3,"Applied experiment. Measure the planet, eliminate fuels that cannot work, and state the fuel type and amount. Easy tells you which known planet it resembles."
+It's (not) Rocket Science!,Normal,1-3,"Applied experiment. Measure the planet, eliminate fuels that cannot work, and state the fuel type and amount."
+It's (not) Rocket Science!,Challenge,1-3,"Applied experiment. Measure the planet, eliminate fuels that cannot work, and state the fuel type and amount."
+Lost in Translation,Easy,1,"Language task. Follow a dialog and bring the requested object. It does not use instruments, hypotheses, or experimental trials."
+Lost in Translation,Normal,1,"Language task. Follow a dialog and bring the requested object. It does not use instruments, hypotheses, or experimental trials."
+Lost in Translation,Challenge,1,"Language task. Follow a dialog and bring the requested object. It does not use instruments, hypotheses, or experimental trials."
+Tutorial,Normal,1,Guided skill walkthrough.
+Small Skills: Dialog,Normal,1,Single-skill check.
+Small Skills: Pick and Place,Normal,1,Single-skill check.
+Small Skills: Pick and Give,Normal,1,Single-skill check.
+Small Skills: Instrument Measurement,Normal,1,Single-skill check. Only checks that one meter can be used.
+Small Skills: Doors,Normal,1,Single-skill check.
+Small Skills: Doors with Keys,Normal,1,Single-skill check.
+Small Skills: Navigation,Normal,1,Single-skill check.
+Small Skills: Search,Normal,1,Single-skill check.
+Small Skills: Discovery Feed,Normal,1,Single-skill check.
+Small Skills: Moving Agents,Normal,1,Single-skill check.
