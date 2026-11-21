@@ -8,10 +8,13 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "deepdiff>=9.2.1",
     "discoveryworld",
     "dotenv>=0.9.9",
     "imageio-ffmpeg>=0.8.1",
     "langchain>=1.4.9",
+    "langchain-deepseek>=1.2.1",
+    "langchain-groq>=1.2.1",
     "langchain-openai>=1.7.2",
     "matplotlib>=3.11.2",
     "numpy>=2.5.4",

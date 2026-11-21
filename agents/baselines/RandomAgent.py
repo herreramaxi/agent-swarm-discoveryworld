@@ -1,8 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import random
 import time
 
-from agents.base import BaseAgent, StepView, active_dialog
+from agents.baselines.base import BaseAgent, StepView, active_dialog
 
 _DIRECTIONS = ("north", "east", "south", "west")
 _SPECIAL_ACTIONS = (
@@ -16,7 +16,9 @@ _SPECIAL_ACTIONS = (
 @dataclass
 class RandomAgent(BaseAgent):
     """Picks one action at random. The runner submits it and ticks the world."""
-
+    
+    possible_actions: dict = field(default_factory=dict)
+    teleport_locations: dict = field(default_factory=dict)
     seed: int | None = None
 
     def __post_init__(self) -> None:
@@ -49,8 +51,8 @@ class RandomAgent(BaseAgent):
             view.observation["ui"]["inventoryObjects"]
             + view.observation["ui"]["accessibleEnvironmentObjects"]
         )
-        action_name = self._rng.choice(list(view.possible_actions.keys()))
-        action_args = view.possible_actions[action_name]["args"]
+        action_name = self._rng.choice(list(self.possible_actions.keys()))
+        action_args = self.possible_actions[action_name]["args"]
         action = {
             "action": action_name,
             "arg1": None,
@@ -72,7 +74,7 @@ class RandomAgent(BaseAgent):
         elif action_name == "ROTATE_DIRECTION":
             action["arg1"] = self._rng.choice(_DIRECTIONS)
         elif action_name == "TELEPORT_TO_LOCATION":
-            teleport_locations = list(view.teleport_locations.keys())
+            teleport_locations = list(self.teleport_locations.keys())
             if not teleport_locations:
                 print("No teleport locations. Moving instead.")
                 action["action"] = "MOVE_DIRECTION"

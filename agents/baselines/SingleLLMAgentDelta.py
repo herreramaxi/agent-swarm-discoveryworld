@@ -1,13 +1,15 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 import os
 from pathlib import Path
 
+from deepdiff import DeepDiff
 from dotenv import load_dotenv
+from langchain.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-from agents.base import BaseAgent, StepView, active_dialog
+from agents.baselines.base import BaseAgent, StepView, active_dialog
 
 _NAVIGATION_ACTIONS = {
     "MOVE_DIRECTION",
@@ -42,13 +44,18 @@ def navigation_loop_detected(actions_taken, window: int = 6) -> bool:
 
 
 @dataclass
-class SingleLLMAgent(BaseAgent):
+class SingleLLMAgentDelta(BaseAgent):
     """Chooses one action with an LLM. The runner submits it and ticks the world."""
-
+    
+    task_description: str = ""
+    possible_actions: dict = field(default_factory=dict)
+    teleport_locations: dict = field(default_factory=dict)
     # model_name: str = "gpt-6-luna"
     model_name: str ="gpt-6-astra"
     reasoning_effort: str = "medium"
-
+    observations_history = []
+    messages = []
+    
     def __post_init__(self) -> None:
         env_path = Path(__file__).resolve().parents[1] / ".env"
         load_dotenv(env_path, override=True)
@@ -62,41 +69,53 @@ class SingleLLMAgent(BaseAgent):
             max_retries=3,
             timeout=60,
         )
+        
+        self.messages = [
+            SystemMessage(self._system_prompt())
+        ]
 
-    def choose_action(self, view: StepView) -> dict:
+    def choose_action(self, view: StepView) -> dict:       
         in_dialog = active_dialog(view.observation) is not None
         prompt = self._prompt(view, in_dialog=in_dialog)
+        self.observations_history.append(view.observation["ui"])
         schema = DialogResponse if in_dialog else ActionResponse
-        response = self._model.with_structured_output(schema).invoke(prompt)
+                
+        self.messages.append(HumanMessage(prompt))
+        
+        response = self._model.with_structured_output(schema).invoke(self.messages)
         return response.model_dump(mode="json")
 
-    def _prompt(self, view: StepView, in_dialog: bool) -> str:
+    def _system_prompt(self):
         prompt = (
-            f"You are DiscoveryWorld agent {self.agent_idx}. Complete the task described in your observation.\n"
-            "Choose one action at a time and check its outcome before continuing.\n"
-            "Teleporting moves only you, not the target object. Pick up movable objects "
-            "before taking them elsewhere. Both arguments of USE must be accessible "
-            "simultaneously (in inventoryObjects or accessibleEnvironmentObjects).\n"
-            "After reaching an object, perform the needed interaction before leaving. "
-            "Use directions_you_can_move for movement; rotate to face nearby objects.\n"
-            "Review your history. Avoid repeating travel without task progress. "
-            "If travel repeats, identify the missing interaction or prerequisite.\n"
-            "For chemical experiments, keep track of chemicals tried and outcomes; "
-            "follow the task's instructions for cleaning the jar between trials.\n"
-            "Use only supplied UUIDs and valid actions. Use null for unused arguments.\n"
-        )
-        prompt += "Current observation:\n" + json.dumps(view.observation["ui"], indent=2)
-        prompt += "\nAvailable actions:\n" + json.dumps(view.possible_actions, indent=2)
-        prompt += "\nTeleport locations:\n" + json.dumps(view.teleport_locations, indent=2)
+                    f"You are DiscoveryWorld agent {self.agent_idx}."
+                    f"Your task is: {self.task_description}\n"     
+                    "Important: Use only supplied UUIDs and valid actions. Use null for unused arguments.")
+        prompt += "\nAvailable actions:\n" + json.dumps(self.possible_actions, indent=2)
+        prompt += "\nTeleport locations:\n" + json.dumps(self.teleport_locations, indent=2)
+        return prompt
+    
+    def _prompt(self, view: StepView, in_dialog: bool) -> str:
+        prompt = ""
+        if not view.history:
+            prompt +=  "First observation:\n" + json.dumps(view.observation["ui"], indent=2)
+        else:
+            previous = self.observations_history[-1]
+            current = view.observation["ui"]
+                    
+            delta = DeepDiff(previous, current, ignore_order=True)
+            prompt +=  "Delta observation (last vs current):\n" + delta.pretty()
+           
+        # prompt += "\nAvailable actions:\n" + json.dumps(self.possible_actions, indent=2)
+        # prompt += "\nTeleport locations:\n" + json.dumps(self.teleport_locations, indent=2)
         prompt += "\nAction history (including outcomes):\n" + json.dumps(view.history, indent=2)
-        if navigation_loop_detected(view.history):
-            print(f"Agent {self.agent_idx}: repeated travel detected.")
-            prompt += (
-                "\nLOOP DETECTED: Recent navigation revisits the same positions with "
-                "unchanged inventory. Identify the missing prerequisite. Prefer an "
-                "accessible interaction that advances the task; collect needed movable "
-                "objects before leaving. Do not repeat the same travel cycle."
-            )
+        # if navigation_loop_detected(view.history):
+        #     print(f"Agent {self.agent_idx}: repeated travel detected.")
+        #     prompt += (
+        #         "\nLOOP DETECTED: Recent navigation revisits the same positions with "
+        #         "unchanged inventory. Identify the missing prerequisite. Prefer an "
+        #         "accessible interaction that advances the task; collect needed movable "
+        #         "objects before leaving. Do not repeat the same travel cycle."
+        #     )
         if in_dialog:
             prompt += (
                 "\nYou are in dialog. Select a listed option from dialog_box and return "

@@ -1,0 +1,15 @@
+[
+    {
+        "action": {
+            "action": "ROTATE_DIRECTION",
+            "arg1": "west",
+            "arg2": null
+        },
+        "message": "I rotated to face west.",
+        "result": {
+            "errors": [],
+            "success": true
+        },
+        "step": 0
+    }
+]

@@ -8,10 +8,7 @@ class StepView:
 
     The runner builds this. Agents do not submit the action or advance the world.
     """
-
-    observation: dict
-    possible_actions: dict
-    teleport_locations: dict
+    observation: dict 
     history: list
 
 

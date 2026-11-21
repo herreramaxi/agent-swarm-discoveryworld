@@ -36,6 +36,7 @@ def main():
     parser.add_argument('--runall', action='store_true', help='Run all scenarios with random agent')
     parser.add_argument('--video', action='store_true', help='Export video of agent actions')
     parser.add_argument('--threadId', type=int, default=randomThreadId)
+    parser.add_argument('--saveOutput', action='store_true', help='Save output json')
 
     args = parser.parse_args()
     agent_config = AgentConfiguration(agent_type=AgentType(args.agent))
@@ -76,10 +77,12 @@ def main():
 
     print("Final scores: ")
     print(json.dumps(finalScores, indent=4, sort_keys=True))
-    filenameOut = safeFilename("output_random_agent." + args.scenario + "-" + args.difficulty + "-s" + str(args.seed) + "-thread" + str(threadId) + "." + dateStr + ".json")
-    print("Writing " + filenameOut + "...")
-    with open(filenameOut, "w") as f:
-        json.dump(finalScores, f, indent=4, sort_keys=True)
+    
+    if args.saveOutput:
+        filenameOut = safeFilename(f"{args.agent}." + args.scenario + "-" + args.difficulty + "-s" + str(args.seed) + "-thread" + str(threadId) + "." + dateStr + ".json")
+        print("Writing " + filenameOut + "...")
+        with open(filenameOut, "w") as f:
+            json.dump(finalScores, f, indent=4, sort_keys=True)
     print("Completed...")
 
 

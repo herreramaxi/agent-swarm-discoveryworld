@@ -1,0 +1,13 @@
+{
+    "action": {
+        "action": "PICKUP",
+        "arg1": 33120,
+        "arg2": null
+    },
+    "message": "I picked up the rusted key (heavily rusted).",
+    "result": {
+        "errors": [],
+        "success": true
+    },
+    "step": 1
+}

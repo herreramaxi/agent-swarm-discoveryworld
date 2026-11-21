@@ -3,7 +3,7 @@ import json
 import time
 
 from agents.AgentsFactory import AgentType, AgentsFactory
-from agents.base import BaseAgent, StepView
+from agents.baselines.base import BaseAgent, StepView
 from environment.discoveryworld.discoveryworld.DiscoveryWorldAPI import DiscoveryWorldAPI
 from shared_world import randomize_start_positions, save_shared_frame
 
@@ -43,7 +43,7 @@ class AgentRunner:
             return None
 
         logFileSuffix = "." + scenarioName + "-" + difficultyStr + "-s" + str(seed) + "-thread" + str(api.THREAD_ID)
-        agents = self._create_agents(agent, seed, api.numUserAgents)
+        agents = self._create_agents(agent, seed, api)
 
         if spawnSeed is not None:
             randomize_start_positions(api, spawnSeed)
@@ -56,7 +56,7 @@ class AgentRunner:
         deltaTime = time.time() - startTime
         print("Elapsed time: " + str(deltaTime) + " seconds for " + str(numSteps) + " steps.")
         stepsPerSecond = numSteps / deltaTime if deltaTime else 0
-        
+
         finalScorecard = api.getTaskScorecard()
         print("Final scorecard: ")
         print(json.dumps(finalScorecard, indent=4, sort_keys=True))
@@ -84,13 +84,13 @@ class AgentRunner:
         return {
             "agentName": agent.value,
             "scenario": scenarioName,
-            "difficulty": difficultyStr,   
-            "numStepsLimit": numSteps,         
-            "numUserAgents": numUserAgents,               
-            "totalScore":totalScore,
+            "difficulty": difficultyStr,
+            "numStepsLimit": numSteps,
+            "numUserAgents": numUserAgents,
+            "totalScore": totalScore,
             "finalNormalizedScore": finalNormalizedScore,
             "completed": completed,
-            "completedSuccessfully": completedSuccessfully,   
+            "completedSuccessfully": completedSuccessfully,
             "stepsTaken": stepsTaken,
             "actionsTaken": episode["actionsTaken"],
             "actionsSucceeded": episode["actionsSucceeded"],
@@ -99,12 +99,19 @@ class AgentRunner:
             "stepsPerSecond": stepsPerSecond,
         }
 
-    def _create_agents(self, agent_type: AgentType, seed: int, num_agents: int) -> list[BaseAgent]:
+    def _create_agents(self, agent_type: AgentType, seed: int, api: DiscoveryWorldAPI ) -> list[BaseAgent]:
+        num_agents = api.numUserAgents
+        possible_actions=api.listKnownActions(limited=False)
+        teleport_locations=api.listTeleportLocationsDict()
+        task_description = api.world.taskScorer.tasks[0].taskDescription
         return [
             AgentsFactory.create_agent(
                 agent_type,
                 agent_idx=agent_idx,
-                seed=seed + agent_idx,
+                seed=seed + agent_idx,          
+                task_description = task_description,
+                possible_actions = possible_actions,
+                teleport_locations = teleport_locations,
             )
             for agent_idx in range(num_agents)
         ]
@@ -133,16 +140,21 @@ class AgentRunner:
             for agent in agents:
                 history = histories[agent.agent_idx]
                 reveal_open_dialog(api, agent.agent_idx)
-                observation = api.getAgentObservation(agentIdx=agent.agent_idx)
+                observation = api.getAgentObservation(agentIdx=agent.agent_idx)                
+              
+                # with open(f"observation-{step}.json", "w") as f:
+                #     json.dump(observation, f, indent=4, sort_keys=True)
+                    
+                # with open(f"history-{step}.json", "w") as f:
+                #     json.dump(history, f, indent=4, sort_keys=True)                    
+                        
                 if observation.get("errors"):
                     raise RuntimeError(observation["errors"])
                 if debug:
                     print(json.dumps(observation, indent=4, sort_keys=True))
 
                 view = StepView(
-                    observation=observation,
-                    possible_actions=api.listKnownActions(limited=False),
-                    teleport_locations=api.listTeleportLocationsDict(),
+                    observation=observation,                    
                     history=history,
                 )
                 choose_started = time.time()
@@ -152,21 +164,26 @@ class AgentRunner:
                 actions_taken += 1
                 if isinstance(result, dict) and result.get("success") is True:
                     actions_succeeded += 1
-                observation = api.getAgentObservation(agentIdx=agent.agent_idx)
-                if observation.get("errors"):
-                    raise RuntimeError(observation["errors"])
+                # observation = api.getAgentObservation(agentIdx=agent.agent_idx)
+                # if observation.get("errors"):
+                #     raise RuntimeError(observation["errors"])
 
-                message = observation["ui"].get("lastActionMessage", "")
+                # message = observation["ui"].get("lastActionMessage", "")
                 history.append({
                     "step": step,
                     "action": action,
                     "result": result,
-                    "message": message,
-                    "location": observation["ui"]["agentLocation"],
-                    "inventory": observation["ui"]["inventoryObjects"],
+                    # "message": message,
+                    # "location": observation["ui"]["agentLocation"],
+                    # "inventory": observation["ui"]["inventoryObjects"],
                 })
+                
+                # with open(f"history-post-action-{step}.json", "w") as f:
+                #     json.dump(history[-1], f, indent=4, sort_keys=True)                   
+                                    
                 print("Agent " + str(agent.agent_idx) + ", round " + str(step) + ": " + json.dumps(action))
-                print("Success: " + str(result.get("success") if isinstance(result, dict) else result) + " | " + message)
+                # print("Success: " + str(result.get("success") if isinstance(result, dict) else result) + " | " + message)
+                print("Success: " + str(result.get("success") if isinstance(result, dict) else result))
 
             tick_result = api.tick()
             if not isinstance(tick_result, dict) or not tick_result.get("success"):
