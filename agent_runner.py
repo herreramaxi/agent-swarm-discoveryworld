@@ -4,7 +4,7 @@ import time
 
 from agents.AgentsFactory import AgentType, AgentsFactory
 from agents.baselines.base import BaseAgent, StepView
-from environment.discoveryworld.discoveryworld.DiscoveryWorldAPI import DiscoveryWorldAPI
+from discoveryworld.DiscoveryWorldAPI import DiscoveryWorldAPI
 from shared_world import randomize_start_positions, save_shared_frame
 
 def reveal_open_dialog(api, agent_idx: int) -> None:

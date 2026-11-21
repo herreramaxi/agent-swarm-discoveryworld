@@ -8,7 +8,7 @@ import time
 
 from agents.AgentsFactory import AgentConfiguration, AgentType
 from agent_runner import AgentRunner
-from environment.discoveryworld.discoveryworld.ScenarioMaker import SCENARIO_DIFFICULTY_OPTIONS, SCENARIO_NAMES, getInternalScenarioName
+from discoveryworld.ScenarioMaker import SCENARIO_DIFFICULTY_OPTIONS, SCENARIO_NAMES, getInternalScenarioName
 
 
 def main():

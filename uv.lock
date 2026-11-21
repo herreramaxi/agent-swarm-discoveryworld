@@ -43,7 +43,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "deepdiff", specifier = ">=9.2.1" },
-    { name = "discoveryworld", editable = "environment/discoveryworld" },
+    { name = "discoveryworld", git = "https://github.com/herreramaxi/discoveryworld.git?rev=3b8166fa2316db535f8d8c5ac67641ac4fde6da5" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "imageio-ffmpeg", specifier = ">=0.8.1" },
     { name = "langchain", specifier = ">=1.4.9" },
@@ -528,26 +528,8 @@ wheels = [
 [[package]]
 name = "discoveryworld"
 version = "0.0.2"
-source = { editable = "environment/discoveryworld" }
+source = { git = "https://github.com/herreramaxi/discoveryworld.git?rev=3b8166fa2316db535f8d8c5ac67641ac4fde6da5#3b8166fa2316db535f8d8c5ac67641ac4fde6da5" }
 dependencies = [
-    { name = "dotenv" },
-    { name = "langchain" },
-    { name = "langchain-openai" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "openai" },
-    { name = "pathfinding" },
-    { name = "psutil" },
-    { name = "pygame" },
-    { name = "termcolor" },
-    { name = "tiktoken" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "langchain", specifier = ">=1.4.9" },
-    { name = "langchain-openai", specifier = ">=1.7.2" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "openai" },

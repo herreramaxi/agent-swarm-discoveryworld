@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-discoveryworld = { path = "environment/discoveryworld", editable = true }
+discoveryworld = { git = "https://github.com/herreramaxi/discoveryworld.git", rev = "3b8166fa2316db535f8d8c5ac67641ac4fde6da5" }
 
 [build-system]
 requires = ["uv_build>=0.13.7,<0.14.0"]

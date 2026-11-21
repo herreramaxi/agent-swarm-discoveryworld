@@ -5,7 +5,7 @@ from langchain.messages import HumanMessage
 from langchain.tools import ToolRuntime, tool
 from langsmith import BaseModel
 from pydantic import Field
-from environment.discoveryworld.discoveryworld.DiscoveryWorldAPI import DiscoveryWorldAPI
+from discoveryworld.DiscoveryWorldAPI import DiscoveryWorldAPI
 
 @dataclass        
 class AgentContext:
@@ -114,6 +114,9 @@ def perform_action_in_environment(action: ActionResponse | DialogResponse, runti
     action_dict = action.model_dump(mode="json")
     
     result = env.performAgentAction(agentIdx=agent_idx, actionJSON=action_dict)
+    print(f"ACTION: {action}")
+    print(f"ACTION RESULT: {result}")
+    
     return result
 
 @tool()
