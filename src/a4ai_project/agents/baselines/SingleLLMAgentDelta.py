@@ -9,7 +9,7 @@ from langchain.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-from agents.baselines.base import BaseAgent, StepView, active_dialog
+from a4ai_project.agents.baselines.base import BaseAgent, StepView, active_dialog
 
 _NAVIGATION_ACTIONS = {
     "MOVE_DIRECTION",

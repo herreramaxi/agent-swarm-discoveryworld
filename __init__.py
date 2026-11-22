@@ -6,8 +6,8 @@ import json
 import random 
 import time
 
-from agents.AgentsFactory import AgentConfiguration, AgentType
-from agent_runner import AgentRunner
+from a4ai_project.agents.AgentsFactory import AgentConfiguration, AgentType
+from a4ai_project.agent_runner import AgentRunner
 from discoveryworld.ScenarioMaker import SCENARIO_DIFFICULTY_OPTIONS, SCENARIO_NAMES, getInternalScenarioName
 
 

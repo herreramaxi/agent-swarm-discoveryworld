@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-from agents.baselines.base import BaseAgent, StepView, active_dialog
+from a4ai_project.agents.baselines.base import BaseAgent, StepView, active_dialog
 
 _NAVIGATION_ACTIONS = {
     "MOVE_DIRECTION",
@@ -40,7 +40,7 @@ def navigation_loop_detected(actions_taken, window: int = 6) -> bool:
     positions = [(record["location"]["x"], record["location"]["y"]) for record in recent]
     return len(set(inventories)) == 1 and len(set(positions)) <= window // 2
 
-from llm import get_llm
+from a4ai_project.llm import get_llm
 @dataclass
 class SingleLLMAgent(BaseAgent):
     """Chooses one action with an LLM. The runner submits it and ticks the world."""

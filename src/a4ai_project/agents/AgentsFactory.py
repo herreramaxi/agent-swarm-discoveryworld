@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from enum import Enum
 from discoveryworld.DiscoveryWorldAPI import DiscoveryWorldAPI
 from langchain_core.language_models.chat_models import BaseChatModel
-from agents.agentic.AgenticPlayer import AgenticPlayer
-from agents.baselines.base import BaseAgent
-from agents.baselines.RandomAgent import RandomAgent
-from agents.baselines.SingleLLMAgent import SingleLLMAgent
-from agents.baselines.SingleLLMAgentDelta import SingleLLMAgentDelta
+from a4ai_project.agents.agentic.AgenticPlayer import AgenticPlayer
+from a4ai_project.agents.baselines.base import BaseAgent
+from a4ai_project.agents.baselines.RandomAgent import RandomAgent
+from a4ai_project.agents.baselines.SingleLLMAgent import SingleLLMAgent
+from a4ai_project.agents.baselines.SingleLLMAgentDelta import SingleLLMAgentDelta
 
 class AgentType(str, Enum):
     Random = "Random"

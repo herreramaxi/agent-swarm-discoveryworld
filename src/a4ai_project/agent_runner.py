@@ -1,12 +1,11 @@
 from dataclasses import dataclass
 import json
 import time
-
-from agents.AgentsFactory import AgentType, AgentsFactory
-from agents.baselines.base import BaseAgent, StepView
+from a4ai_project.agents.AgentsFactory import AgentType, AgentsFactory
+from a4ai_project.agents.baselines.base import BaseAgent, StepView
 from discoveryworld.DiscoveryWorldAPI import DiscoveryWorldAPI
 from langchain_core.language_models.chat_models import BaseChatModel
-from shared_world import randomize_start_positions, save_shared_frame
+from a4ai_project.shared_world import randomize_start_positions, save_shared_frame
 
 def reveal_open_dialog(api, agent_idx: int) -> None:
     """Show an open conversation in the observation.

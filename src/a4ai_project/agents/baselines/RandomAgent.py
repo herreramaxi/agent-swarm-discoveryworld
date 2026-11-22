@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import random
 import time
 
-from agents.baselines.base import BaseAgent, StepView, active_dialog
+from a4ai_project.agents.baselines.base import BaseAgent, StepView, active_dialog
 
 _DIRECTIONS = ("north", "east", "south", "west")
 _SPECIAL_ACTIONS = (
