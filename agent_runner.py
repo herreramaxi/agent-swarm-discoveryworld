@@ -3,10 +3,9 @@ import json
 import time
 
 from agents.AgentsFactory import AgentType, AgentsFactory
-from agents.agentic.AgenticPlayer import AgenticPlayer
 from agents.baselines.base import BaseAgent, StepView
 from discoveryworld.DiscoveryWorldAPI import DiscoveryWorldAPI
-from llm import get_llm
+from langchain_core.language_models.chat_models import BaseChatModel
 from shared_world import randomize_start_positions, save_shared_frame
 
 def reveal_open_dialog(api, agent_idx: int) -> None:
@@ -32,7 +31,7 @@ def reveal_open_dialog(api, agent_idx: int) -> None:
 @dataclass
 class AgentRunner:
 
-    def runAgent(self, agent: AgentType, scenarioName: str, difficultyStr: str,  model_name:str, seed: int = 0, numSteps: int = 10, exportVideo: bool = False, threadId: int = 1, debug: bool = False, numUserAgents: int = 1, spawnSeed: int | None = None):
+    def runAgent(self, agent: AgentType, scenarioName: str, difficultyStr: str, model: BaseChatModel | None = None, seed: int = 0, numSteps: int = 10, exportVideo: bool = False, threadId: int = 1, debug: bool = False, numUserAgents: int = 1, spawnSeed: int | None = None):
         print("Running agent '" + agent.value + "' on scenario '" + scenarioName + "' with difficulty '" + difficultyStr + "' for " + str(numSteps) + " steps, seed " + str(seed) + ", thread ID " + str(threadId) + ", agents " + str(numUserAgents) + ".")
 
         api = DiscoveryWorldAPI(threadID=threadId)
@@ -44,7 +43,7 @@ class AgentRunner:
             print("Error: '" + scenarioName + "' (" + difficultyStr + ") spawned " + str(api.numUserAgents) + " user agents but " + str(numUserAgents) + " were requested.")
             return None
 
-        agents = self._create_agents(agent, seed, api, numSteps, model_name)
+        agents = self._create_agents(agent, seed, api, numSteps, model)
 
         if spawnSeed is not None:
             randomize_start_positions(api, spawnSeed)
@@ -104,7 +103,7 @@ class AgentRunner:
             "stepsPerSecond": stepsPerSecond,
         }
 
-    def runAgent_Agentic(self, agent: AgentType, scenarioName: str, difficultyStr: str, model_name:str, seed: int = 0, numSteps: int = 10, exportVideo: bool = False, threadId: int = 1, debug: bool = False, numUserAgents: int = 1, spawnSeed: int | None = None):
+    def runAgent_Agentic(self, agent: AgentType, scenarioName: str, difficultyStr: str, model: BaseChatModel, seed: int = 0, numSteps: int = 10, exportVideo: bool = False, threadId: int = 1, debug: bool = False, numUserAgents: int = 1, spawnSeed: int | None = None):
         print("Running agent '" + agent.value + "' on scenario '" + scenarioName + "' with difficulty '" + difficultyStr + "' for " + str(numSteps) + " steps, seed " + str(seed) + ", thread ID " + str(threadId) + ", agents " + str(numUserAgents) + ".")
 
         api = DiscoveryWorldAPI(threadID=threadId)
@@ -120,12 +119,11 @@ class AgentRunner:
         player = AgentsFactory.create_agent(
                         agent_type = agent,
                         max_num_steps = numSteps,
-                        model_name = model_name,
+                        model = model,
                         agent_idx=0,
                         environment = api,
                         seed=seed    
                     )
-        # player = AgenticPlayer(agent_idx = 0, model = model, environment = api, max_num_steps= numSteps)
         startTime = time.time()
         response = player.invoke(task_description)
         deltaTime = time.time() - startTime
@@ -181,7 +179,7 @@ class AgentRunner:
             "response": response
         }
 
-    def _create_agents(self, agent_type: AgentType, seed: int, api: DiscoveryWorldAPI, numSteps:int, model_name:str) -> list[BaseAgent]:
+    def _create_agents(self, agent_type: AgentType, seed: int, api: DiscoveryWorldAPI, numSteps: int, model: BaseChatModel | None) -> list[BaseAgent]:
         num_agents = api.numUserAgents
         possible_actions=api.listKnownActions(limited=False)
         teleport_locations=api.listTeleportLocationsDict()
@@ -196,7 +194,7 @@ class AgentRunner:
                 possible_actions = possible_actions,
                 teleport_locations = teleport_locations,
                 max_num_steps = numSteps,
-                model_name = model_name
+                model = model
             )
             for agent_idx in range(num_agents)
         ]

@@ -1,3 +1,4 @@
+from typing import Literal
 
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
@@ -35,43 +36,24 @@ models: dict[str, BaseChatModel] = {
         max_retries=3,
         timeout=60,
     ),
-    "gpt-6-luna-none": ChatOpenAI(
+    "gpt-6-luna": ChatOpenAI(
         model="gpt-6-luna",
-        reasoning_effort="none",
+        reasoning_effort="medium",
         max_retries=3,
         timeout=60,
     ),
-    "gpt-6-luna-low": ChatOpenAI(
-        model="gpt-6-luna",
-        reasoning_effort="low",
+    "gpt-6.2-sol": ChatOpenAI(
+        model="gpt-6.2-sol",
+        reasoning_effort="medium",
         max_retries=3,
         timeout=60,
     ),
-    "gpt-6-luna-medium": ChatOpenAI(
-        model="gpt-6-luna",
-        reasoning={"effort": "medium", "summary": "auto"},
-        output_version="responses/v1",
+    "gpt-6.2-astra": ChatOpenAI(
+        model="gpt-6.2-astra",
+        reasoning_effort="medium",
         max_retries=3,
         timeout=60,
     ),
-    "gpt-6.2-sol-medium": ChatOpenAI(
-            model="gpt-6.2-sol",
-            reasoning_effort="medium",
-            max_retries=3,
-            timeout=60,
-    ),   
-    "gpt-6.2-astra-medium": ChatOpenAI(
-            model="gpt-6.2-astra",
-            reasoning_effort="medium",
-            max_retries=3,
-            timeout=60,
-        ),
-       "gpt-6.2-astra-max": ChatOpenAI(
-                model="gpt-6.2-astra",
-                reasoning_effort="max",
-                max_retries=3,
-                timeout=60,
-            ),
     "gpt-6-astra": ChatOpenAI(
         model="gpt-6-astra",
         reasoning_effort="low",
@@ -103,6 +85,40 @@ models: dict[str, BaseChatModel] = {
     ),
 }
 
+ReasoningSummary = Literal["auto", "concise", "detailed"]
 
-def get_llm(model_name: str) -> BaseChatModel:
-    return models[model_name]
+def get_llm(
+    model_name: str,
+    *,
+    reasoning_effort: str | None = None,
+    reasoning_summary: ReasoningSummary | None = None,
+) -> BaseChatModel:
+    """Get a registered model with optional OpenAI reasoning settings."""
+    model = models[model_name]
+    if reasoning_effort is None and reasoning_summary is None:
+        return model
+    if not isinstance(model, ChatOpenAI):
+        raise ValueError("Reasoning overrides in get_llm are only supported for OpenAI models.")
+    if model.reasoning is None and reasoning_summary is None:
+        return model.model_copy(update={"reasoning_effort": reasoning_effort})
+
+    reasoning = dict(model.reasoning or {})
+    reasoning["effort"] = reasoning_effort or reasoning.get("effort") or model.reasoning_effort
+    if reasoning_summary is not None:
+        reasoning["summary"] = reasoning_summary
+    return model.model_copy(update={
+        "reasoning_effort": None,
+        "reasoning": reasoning,
+        "output_version": "responses/v1",
+    })
+
+
+# Keep the model names used by existing notebooks.
+models.update({
+    "gpt-6-luna-none": get_llm("gpt-6-luna", reasoning_effort="none"),
+    "gpt-6-luna-low": get_llm("gpt-6-luna", reasoning_effort="low"),
+    "gpt-6-luna-medium": get_llm("gpt-6-luna", reasoning_summary="auto"),
+    "gpt-6.2-sol-medium": models["gpt-6.2-sol"],
+    "gpt-6.2-astra-medium": models["gpt-6.2-astra"],
+    "gpt-6.2-astra-max": get_llm("gpt-6.2-astra", reasoning_effort="max"),
+})

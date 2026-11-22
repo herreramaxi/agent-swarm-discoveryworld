@@ -1,13 +1,12 @@
 from dataclasses import dataclass
 from enum import Enum
 from discoveryworld.DiscoveryWorldAPI import DiscoveryWorldAPI
-from langsmith import BaseModel
+from langchain_core.language_models.chat_models import BaseChatModel
 from agents.agentic.AgenticPlayer import AgenticPlayer
 from agents.baselines.base import BaseAgent
 from agents.baselines.RandomAgent import RandomAgent
 from agents.baselines.SingleLLMAgent import SingleLLMAgent
 from agents.baselines.SingleLLMAgentDelta import SingleLLMAgentDelta
-from llm import get_llm
 
 class AgentType(str, Enum):
     Random = "Random"
@@ -26,7 +25,7 @@ class AgentsFactory:
     def create_agent(
         agent_type: AgentType,
         max_num_steps: int,
-        model_name: str,
+        model: BaseChatModel | None = None,
         agent_idx: int = 0,        
         seed: int | None = None,
         task_description: str = None,
@@ -40,7 +39,8 @@ class AgentsFactory:
                                teleport_locations=teleport_locations,
                                seed=seed)
             
-        model = get_llm(model_name)     
+        if model is None:
+            raise ValueError(f"{agent_type.value} requires a configured model.")
                
         if agent_type in (AgentType.LLMAgent, AgentType.LLMAgentCompact, AgentType.LLMAgentMultiTurn):
             return SingleLLMAgent(
