@@ -44,38 +44,17 @@ from llm import get_llm
 @dataclass
 class SingleLLMAgent(BaseAgent):
     """Chooses one action with an LLM. The runner submits it and ticks the world."""
-    
+    model: BaseModel
     task_description: str = ""
     possible_actions: dict = field(default_factory=dict)
-    teleport_locations: dict = field(default_factory=dict)
-    # model_name: str = "gpt-6-luna"
-    # model_name: str ="gpt-6-astra"
-
-    reasoning_effort: str = "medium"
+    teleport_locations: dict = field(default_factory=dict)  
     compact_prompt: bool = False
-
     
-    def __post_init__(self) -> None:
-        env_path = Path(__file__).resolve().parents[1] / ".env"
-        load_dotenv(env_path, override=True)
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            raise RuntimeError(f"OPENAI_API_KEY is missing. Expected it in {env_path}.")
-        self._model =get_llm("gpt-6-luna-medium")
-        
-        # ChatOpenAI(
-        #     model=self.model_name,
-        #     api_key=api_key,
-        #     reasoning_effort=self.reasoning_effort,
-        #     max_retries=3,
-        #     timeout=60,
-        # )
-
     def choose_action(self, view: StepView) -> dict:
         in_dialog = active_dialog(view.observation) is not None
         prompt = self._prompt(view, in_dialog=in_dialog)
         schema = DialogResponse if in_dialog else ActionResponse
-        response = self._model.with_structured_output(schema).invoke(prompt)
+        response = self.model.with_structured_output(schema).invoke(prompt)
         return response.model_dump(mode="json")
 
     def _prompt(self, view: StepView, in_dialog: bool) -> str:

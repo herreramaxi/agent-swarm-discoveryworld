@@ -46,30 +46,14 @@ def navigation_loop_detected(actions_taken, window: int = 6) -> bool:
 @dataclass
 class SingleLLMAgentDelta(BaseAgent):
     """Chooses one action with an LLM. The runner submits it and ticks the world."""
-    
+    model: BaseModel
     task_description: str = ""
     possible_actions: dict = field(default_factory=dict)
     teleport_locations: dict = field(default_factory=dict)
-    # model_name: str = "gpt-6-luna"
-    model_name: str ="gpt-6-astra"
-    reasoning_effort: str = "medium"
     observations_history = []
     messages = []
     
-    def __post_init__(self) -> None:
-        env_path = Path(__file__).resolve().parents[1] / ".env"
-        load_dotenv(env_path, override=True)
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            raise RuntimeError(f"OPENAI_API_KEY is missing. Expected it in {env_path}.")
-        self._model = ChatOpenAI(
-            model=self.model_name,
-            api_key=api_key,
-            reasoning_effort=self.reasoning_effort,
-            max_retries=3,
-            timeout=60,
-        )
-        
+    def __post_init__(self) -> None:  
         self.messages = [
             SystemMessage(self._system_prompt())
         ]
@@ -82,7 +66,7 @@ class SingleLLMAgentDelta(BaseAgent):
                 
         self.messages.append(HumanMessage(prompt))
         
-        response = self._model.with_structured_output(schema).invoke(self.messages)
+        response = self.model.with_structured_output(schema).invoke(self.messages)
         return response.model_dump(mode="json")
 
     def _system_prompt(self):

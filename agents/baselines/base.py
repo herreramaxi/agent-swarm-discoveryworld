@@ -24,7 +24,7 @@ def active_dialog(observation: dict) -> dict | None:
 class BaseAgent(ABC):
     """A policy that returns one action dict for the current view."""
 
-    agent_idx: int = 0
+    agent_idx: int
 
     @abstractmethod
     def choose_action(self, view: StepView) -> dict:

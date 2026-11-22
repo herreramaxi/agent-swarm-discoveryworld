@@ -48,16 +48,11 @@ models: dict[str, BaseChatModel] = {
         timeout=60,
     ),
     "gpt-6-luna-medium": ChatOpenAI(
-            model="gpt-6-luna",
-            reasoning_effort="medium",
-            max_retries=3,
-            timeout=60,
-    ),
-    "gpt-6-luna-medium": ChatOpenAI(
-            model="gpt-6-luna",
-            reasoning_effort="medium",
-            max_retries=3,
-            timeout=60,
+        model="gpt-6-luna",
+        reasoning={"effort": "medium", "summary": "auto"},
+        output_version="responses/v1",
+        max_retries=3,
+        timeout=60,
     ),
     "gpt-6.2-sol-medium": ChatOpenAI(
             model="gpt-6.2-sol",
