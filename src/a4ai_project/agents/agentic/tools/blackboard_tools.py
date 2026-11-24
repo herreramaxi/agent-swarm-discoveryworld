@@ -4,6 +4,7 @@ from a4ai_project.agents.agentic.context import BlackboardAgentContext
 
 @tool
 def post_message_in_blackboard(message: str,runtime: ToolRuntime[BlackboardAgentContext],):
+    """Post a message to the shared blackboard under your nickname."""
     ctx = runtime.context
     message_id = ctx.blackboard.post_message(ctx.agent_nickname, message)
     
@@ -12,6 +13,7 @@ def post_message_in_blackboard(message: str,runtime: ToolRuntime[BlackboardAgent
 #TODO: need to think this part, maybe agent will send the parameter last row id
 @tool    
 def read_messages_from_blackboard(runtime: ToolRuntime[BlackboardAgentContext]):
+    """Read blackboard messages after your last read message ID."""
     ctx = runtime.context
     messages = ctx.blackboard.read_messages(last_row_id_read=ctx.last_read_id)
     

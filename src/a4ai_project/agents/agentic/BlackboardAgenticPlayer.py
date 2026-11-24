@@ -10,8 +10,6 @@ from langsmith import BaseModel
 from discoveryworld.DiscoveryWorldAPI import DiscoveryWorldAPI
 
 from a4ai_project.communication.blackboard import Blackboard
-
-
     
 class PlayerState(AgentState):
     actions_succeeded: NotRequired[Annotated[int, operator.add]]
@@ -57,7 +55,12 @@ class BlackboardAgenticPlayer:
         )
     
     def invoke(self, input:str):
-        context = BlackboardAgentContext(self.agent_idx, self.environment, self.blackboard)
+        context = BlackboardAgentContext(
+            agent_idx=self.agent_idx,
+            agent_nickname=self.agent_nickname,
+            environment=self.environment,
+            blackboard=self.blackboard,
+        )
         human_message = HumanMessage(input)
         self.message_history.append(human_message)
         

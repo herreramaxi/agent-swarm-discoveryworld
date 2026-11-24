@@ -1,6 +1,6 @@
 import asyncio
 from collections import defaultdict
-from a4ai_project.agents.agentic.BlackboardAgenticPlayer import BlackboardAgenticPlayer
+from typing import Any
 from a4ai_project.communication.System1 import System1
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -50,7 +50,7 @@ class Blackboard:
             )
         return cursor.fetchall()
     
-    def subscribe(self, agent: BlackboardAgenticPlayer):     
+    def subscribe(self, agent: Any):     
         self.subscribers.setdefault(agent.agent_nickname, set()).add(agent.agent_idx)   
         self.subscribers.setdefault("broadcast", set()).add(agent.agent_idx)   
 
@@ -60,7 +60,7 @@ class Blackboard:
         if agent.agent_idx not in self.signals:
             self.signals[agent.agent_idx] = asyncio.Event()    
         
-    async def wait(self, agent: BlackboardAgenticPlayer, timeout_seconds: float) -> bool:
+    async def wait(self, agent: Any, timeout_seconds: float) -> bool:
         try:
             await asyncio.wait_for(
                 self.signals[agent.agent_idx].wait(),

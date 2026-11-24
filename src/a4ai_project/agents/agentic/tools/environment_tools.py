@@ -1,4 +1,4 @@
-from a4ai_project.agents.agentic.AgenticPlayer import AgentContext
+from a4ai_project.agents.agentic.context import AgentContext
 from langchain.messages import ToolMessage
 from langchain.tools import ToolRuntime, tool
 from langgraph.types import Command
