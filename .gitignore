@@ -223,3 +223,6 @@ __marimo__/
 .streamlit/secrets.toml
 
 */video/
+
+# Blackboard database written by the agent runner
+*.sqlite*

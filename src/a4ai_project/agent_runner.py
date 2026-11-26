@@ -1,10 +1,15 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 import json
 import time
 from a4ai_project.agents.AgentsFactory import AgentType, AgentsFactory
+from a4ai_project.agents.agentic.AgentHarness import STOP, AgentHarness
 from a4ai_project.agents.baselines.base import BaseAgent, StepView
 from discoveryworld.DiscoveryWorldAPI import DiscoveryWorldAPI
 from langchain_core.language_models.chat_models import BaseChatModel
+from a4ai_project.agents.shared_model import FinishEpisode
+from a4ai_project.communication.RouterSystem1 import RouterSystem1
+from a4ai_project.communication.blackboard import Blackboard
 from a4ai_project.environment.shared_world import randomize_start_positions, save_shared_frame
 
 def reveal_open_dialog(api, agent_idx: int) -> None:
@@ -115,6 +120,7 @@ class AgentRunner:
             return None
 
         task_description = api.world.taskScorer.tasks[0].taskDescription   
+        
         player = AgentsFactory.create_agent(
                         agent_type = agent,
                         max_num_steps = numSteps,
@@ -180,6 +186,137 @@ class AgentRunner:
             "stepsPerSecond": stepsPerSecond,
             "response": response
         }
+        
+    def runAgent_Agentic_blackboard(self, agent: AgentType, scenarioName: str, difficultyStr: str, model: BaseChatModel, seed: int = 0, numSteps: int = 10, exportVideo: bool = False, threadId: int = 1, debug: bool = False, numUserAgents: int = 1, spawnSeed: int | None = None):
+            print("Running agent '" + agent.value + "' on scenario '" + scenarioName + "' with difficulty '" + difficultyStr + "' for " + str(numSteps) + " steps, seed " + str(seed) + ", thread ID " + str(threadId) + ", agents " + str(numUserAgents) + ".")
+    
+            api = DiscoveryWorldAPI(threadID=threadId)
+            success = api.loadScenario(scenarioName=scenarioName, difficultyStr=difficultyStr, randomSeed=seed, numUserAgents=numUserAgents)
+            if success == False:
+                print("Error: Could not load scenario '" + scenarioName + "' with difficulty '" + difficultyStr + "'.")
+                return None
+            if api.numUserAgents != numUserAgents:
+                print("Error: '" + scenarioName + "' (" + difficultyStr + ") spawned " + str(api.numUserAgents) + " user agents but " + str(numUserAgents) + " were requested.")
+                return None
+            if spawnSeed is not None:
+                randomize_start_positions(api, spawnSeed)
+                            
+            task_description = api.world.taskScorer.tasks[0].taskDescription   
+                        
+            # players = self._create_agents(agent_type=AgentType.BlackboardAgenticPlayer, seed = seed, api= api, numSteps=numSteps,model=model)
+            blackboard = Blackboard(router=RouterSystem1())
+            print("Blackboard database: " + str(blackboard.db_path.resolve()))
+            
+            harnesses = {}
+            for  idx in range(numUserAgents):
+                name = f"agent-{idx}"
+                harness = AgentHarness(
+                    agent_idx=idx,
+                    agent_nickname= name,
+                    model = model,
+                    environment=api,
+                    max_num_steps=numSteps,
+                    blackboard = blackboard             
+                )                
+                harnesses[name]= harness
+        
+            startTime = time.time()
+            # response = player.invoke(task_description)
+            
+            blackboard.broadcast_message("scenario", task_description)
+            finished = None
+            finished_by = None
+            with ThreadPoolExecutor(max_workers=len(harnesses)) as pool:
+                try:
+                    futures = {
+                        pool.submit(harness.invoke): harness
+                        for harness in harnesses.values()
+                    }
+
+                    for future in as_completed(futures):
+                        outcome = future.result()
+                        if not isinstance(outcome, dict):
+                            continue
+                        structured = outcome.get("structured_response")
+                        if finished is None and isinstance(structured, FinishEpisode):
+                            finished = structured
+                            finished_by = futures[future].agent_nickname
+                            for harness in harnesses.values():
+                                harness.queue.put(STOP)
+                except BaseException:
+                    
+                    for harness in harnesses.values():
+                        harness.queue.put(STOP)
+                    raise
+
+            if finished is None:
+                raise RuntimeError("All harnesses exited without a FinishEpisode.")
+
+            actions_succeeded = sum(harness.agent.actions_succeeded for harness in harnesses.values())
+            actions_failed = sum(harness.agent.actions_failed for harness in harnesses.values())
+            response = {
+                "finished_by": finished_by,
+                **finished.model_dump(),
+                "actions_succeeded": actions_succeeded,
+                "actions_failed": actions_failed,
+            }
+                        
+            deltaTime = time.time() - startTime
+            stepsTaken = api.world.getStepCounter()
+            print("Elapsed time: " + str(deltaTime) + " seconds for " + str(stepsTaken) + " steps.")
+            stepsPerSecond = stepsTaken / deltaTime if deltaTime else 0
+            actions_succeeded = response.get("actions_succeeded", 0)
+            actions_failed = response.get("actions_failed", 0)
+            finalScorecard = api.getTaskScorecard()
+            print("Final scorecard: ")
+            print(json.dumps(finalScorecard, indent=4, sort_keys=True))
+    
+            taskName = finalScorecard[0]["taskName"]
+            finalNormalizedScore = finalScorecard[0]["scoreNormalized"]
+            totalScore = finalScorecard[0]["score"]
+            
+    
+            print("Final normalized score for task '" + taskName + "': " + str(finalNormalizedScore))
+            print("Number of steps: " + str(stepsTaken))
+            # print("Steps per second: " + str(stepsPerSecond))
+    
+            # if exportVideo == True:
+            #     logFileSuffix = "." + scenarioName + "-" + difficultyStr + "-s" + str(seed) + "-thread" + str(api.THREAD_ID)
+            #     filenameOut = "output_random_agent." + logFileSuffix + ".mp4"
+            #     api.createAgentVideo(agentIdx=agents[0].agent_idx, filenameOut=filenameOut)
+    
+            completed = 0
+            if finalScorecard[0]["completed"] == True:
+                completed = 1
+            completedSuccessfully = 0
+            if finalScorecard[0]["completedSuccessfully"] == True:
+                completedSuccessfully = 1
+    
+            actions_total = actions_succeeded + actions_failed
+            actions_success_rate = actions_succeeded / actions_total if actions_total else 0
+    
+            return {
+                "agentName": agent.value,
+                "scenario": scenarioName,
+                "difficulty": difficultyStr,
+                "numStepsLimit": numSteps,
+                "numUserAgents": numUserAgents,
+                "totalScore": totalScore,
+                "finalNormalizedScore": finalNormalizedScore,
+                "completed": completed,
+                "completedSuccessfully": completedSuccessfully,
+                "stepsTaken": stepsTaken,
+                "actionsSucceeded": actions_succeeded,
+                "actionsFailed": actions_failed,
+                "actionsSuccessRate": actions_success_rate,
+                "totalTimeTaken": deltaTime,
+                "stepsPerSecond": stepsPerSecond,
+                "response": response,
+                "invocationTrace": sorted(
+                    (record for harness in harnesses.values() for record in harness.invocation_trace),
+                    key=lambda record: record["started_at"],
+                ),
+            }
 
     def _create_agents(self, agent_type: AgentType, seed: int, api: DiscoveryWorldAPI, numSteps: int, model: BaseChatModel | None) -> list[BaseAgent]:
         num_agents = api.numUserAgents
@@ -191,6 +328,7 @@ class AgentRunner:
             AgentsFactory.create_agent(
                 agent_type,
                 agent_idx=agent_idx,
+                agent_nickname = f"agent-{agent_idx}",
                 seed=seed + agent_idx,          
                 task_description = task_description,
                 possible_actions = possible_actions,

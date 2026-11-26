@@ -3,7 +3,7 @@ import os
 from typesafe_sdk import Choice, TypeSafeClient
 
 @dataclass
-class System1:  
+class RouterSystem1:  
     criteria: dict[str,str] = field(default_factory=dict)
     client: TypeSafeClient | None = None
     threshold: float = 70
@@ -16,7 +16,7 @@ class System1:
         
         self.criteria["broadcast"] = "broadcast channel:  when there is no specific destination, messages should be routed/sent to broadcast"
            
-    def infer_topic(self, message: str):        
+    def infer_destination(self, message: str):        
         result = self.client.system_one(
             state=message,
             model="jev-latest",

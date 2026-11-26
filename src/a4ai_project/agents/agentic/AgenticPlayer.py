@@ -1,5 +1,5 @@
 from a4ai_project.agents.agentic.context import AgentContext
-from a4ai_project.agents.agentic.tools.environment_tools import get_observation, list_available_actions, list_teleport_locations_available, perform_action_in_environment, tick_environment_world
+from a4ai_project.agents.agentic.tools.environment_tools import get_observation, list_available_actions, list_teleport_locations_available, perform_action_in_environment, tick_environment_world_old
 from dataclasses import dataclass, field
 import operator
 from typing import Annotated, Any, NotRequired
@@ -31,7 +31,7 @@ class AgenticPlayer:
                 list_teleport_locations_available, 
                 get_observation, 
                 perform_action_in_environment, 
-                tick_environment_world
+                tick_environment_world_old
             ],
             system_prompt= self._get_system_prompt(),
             middleware= []            
